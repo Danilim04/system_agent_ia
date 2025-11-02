@@ -1,2 +1,8 @@
 .env
 .env_example
+.logs
+.certs
+/logs
+/certs
+./logs
+./certs

@@ -17,6 +17,6 @@ CREATE EXTENSION IF NOT EXISTS vector;
 \echo 'Vector extension enabled in chatwoot_db';
 
 -- Connect back to main database
-\c automation_db;
+\c postgres;
 
 \echo 'Database initialization with pgvector complete.';
