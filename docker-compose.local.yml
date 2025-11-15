@@ -16,14 +16,12 @@ services:
       WEBHOOK_URL: ${WEBHOOK_URL}
       N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE}
       TZ: ${TZ}
-
       # Segurança
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE}
       N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER}
       N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD}
       N8N_DIAGNOSTICS_ENABLED: ${N8N_DIAGNOSTICS_ENABLED}
-
       # Banco (Postgres)
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
@@ -32,7 +30,6 @@ services:
       DB_POSTGRESDB_USER: ${POSTGRES_USER}
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_POSTGRESDB_SCHEMA: ${DB_POSTGRESDB_SCHEMA}
-
       # Execuções em fila (Redis/Bull)
       EXECUTIONS_MODE: queue
       QUEUE_BULL_REDIS_HOST: redis_back
@@ -64,7 +61,7 @@ services:
     command: worker
     environment:
       NODE_ENV: production
-      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'true'
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
       # Rede / URLs
       N8N_HOST: ${N8N_HOST}
       N8N_PORT: ${N8N_PORT}
@@ -72,14 +69,12 @@ services:
       WEBHOOK_URL: ${WEBHOOK_URL}
       N8N_SECURE_COOKIE: ${N8N_SECURE_COOKIE}
       TZ: ${TZ}
-
       # Segurança
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
       N8N_BASIC_AUTH_ACTIVE: ${N8N_BASIC_AUTH_ACTIVE}
       N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER}
       N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD}
       N8N_DIAGNOSTICS_ENABLED: ${N8N_DIAGNOSTICS_ENABLED}
-
       # Banco (Postgres)
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
@@ -88,7 +83,6 @@ services:
       DB_POSTGRESDB_USER: ${POSTGRES_USER}
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_POSTGRESDB_SCHEMA: ${DB_POSTGRESDB_SCHEMA}
-
       # Execuções em fila (Redis/Bull)
       EXECUTIONS_MODE: queue
       QUEUE_BULL_REDIS_HOST: redis_back
@@ -105,48 +99,40 @@ services:
     image: chatwoot/chatwoot:v4.4.0
     restart: unless-stopped
     environment:
-      # postgres
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DATABASE=${CHATWOOT_DB_NAME}
-      - POSTGRES_USERNAME=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      # redis
-      - REDIS_URL=redis://redis_back:6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      # storage
-      - ACTIVE_STORAGE_SERVICE=amazon
-      - S3_BUCKET_NAME=chatwoot-2
-      - AWS_ACCESS_KEY_ID=${CHATWOOT_AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${CHATWOOT_AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=us-west-2
-      - STORAGE_REGION=us-west-2
-
-      # app
-      - RAILS_ENV=production
-      - FRONTEND_URL=https://auto2.azapfy.com.br
-      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY_BASE}
-      # acesso 
-      - ENABLE_ACCOUNT_SIGNUP=true
-      # email 
-      - MAILER_SENDER_EMAIL=Azapfy <danielalvesferraz04@gmail.com>
-      - SMTP_DOMAIN=gmail.com
-      - SMTP_ADDRESS=smtp.gmail.com
-      - SMTP_PORT=587
-      - SMTP_USERNAME=danielalvesferraz04@gmail.com
-      - SMTP_PASSWORD=${CHATWOOT_SMTP_PASSWORD}
-      - SMTP_AUTHENTICATION=login
-      - SMTP_ENABLE_STARTTLS_AUTO=true
-      - SMTP_OPENSSL_VERIFY_MODE=none
-      - MAILER_INBOUND_EMAIL_DOMAIN=auto2.azapfy.com.br
-      # Timeout
-      - REQUEST_TIMEOUT=90
-      - RACK_TIMEOUT_SERVICE_TIMEOUT=180
-      - PUMA_WORKERS_TIMEOUT=180
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${CHATWOOT_DB_NAME}
+      POSTGRES_USERNAME: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: redis://redis_back:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ACTIVE_STORAGE_SERVICE: amazon
+      S3_BUCKET_NAME: chatwoot-2
+      AWS_ACCESS_KEY_ID: ${CHATWOOT_AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${CHATWOOT_AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: us-west-2
+      STORAGE_REGION: us-west-2
+      RAILS_ENV: production
+      FRONTEND_URL: https://auto2.azapfy.com.br
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE}
+      ENABLE_ACCOUNT_SIGNUP: "true"
+      MAILER_SENDER_EMAIL: "Azapfy <danielalvesferraz04@gmail.com>"
+      SMTP_DOMAIN: gmail.com
+      SMTP_ADDRESS: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USERNAME: danielalvesferraz04@gmail.com
+      SMTP_PASSWORD: ${CHATWOOT_SMTP_PASSWORD}
+      SMTP_AUTHENTICATION: login
+      SMTP_ENABLE_STARTTLS_AUTO: "true"
+      SMTP_OPENSSL_VERIFY_MODE: none
+      MAILER_INBOUND_EMAIL_DOMAIN: auto2.azapfy.com.br
+      REQUEST_TIMEOUT: 90
+      RACK_TIMEOUT_SERVICE_TIMEOUT: 180
+      PUMA_WORKERS_TIMEOUT: 180
     entrypoint: docker/entrypoints/rails.sh
     command: [ 'bundle', 'exec', 'rails', 's', '-b', '0.0.0.0', '-p', '3000' ]
     ports:
-      - '0.0.0.0:3000:3000'  # Porta para acesso direto (teste)
+      - '0.0.0.0:3000:3000' # Porta para acesso direto (teste)
     labels:
       - "traefik.enable=true"
       # HTTP
@@ -169,40 +155,35 @@ services:
     image: chatwoot/chatwoot:v4.6.0
     restart: unless-stopped
     environment:
-      - SECRET_KEY_BASE=${CHATWOOT_SECRET_KEY_BASE}
-      # postgres
-      - POSTGRES_HOST=postgres
-      - POSTGRES_PORT=5432
-      - POSTGRES_DATABASE=${CHATWOOT_DB_NAME}
-      - POSTGRES_USERNAME=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      # redis
-      - REDIS_URL=redis://redis_back:6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      # storage
-      - ACTIVE_STORAGE_SERVICE=amazon
-      - S3_BUCKET_NAME=chatwoot-2
-      - AWS_ACCESS_KEY_ID=${CHATWOOT_AWS_ACCESS_KEY_ID}
-      - AWS_SECRET_ACCESS_KEY=${CHATWOOT_AWS_SECRET_ACCESS_KEY}
-      - AWS_REGION=us-west-2
-      - STORAGE_REGION=us-west-2
-      - ENABLE_ACCOUNT_SIGNUP=true
-      # email 
-      - MAILER_SENDER_EMAIL=Azapfy <danielalvesferraz04@gmail.com>
-      - SMTP_DOMAIN=gmail.com
-      - SMTP_ADDRESS=smtp.gmail.com
-  - SMTP_PORT=587
-  - SMTP_USERNAME=danielalvesferraz04@gmail.com
-  - SMTP_PASSWORD=${CHATWOOT_SMTP_PASSWORD}
-      - SMTP_AUTHENTICATION=login
-      - SMTP_ENABLE_STARTTLS_AUTO=true
-      - SMTP_OPENSSL_VERIFY_MODE=none
-      - MAILER_INBOUND_EMAIL_DOMAIN=auto2.azapfy.com.br
-      - FRONTEND_URL=https://auto2.azapfy.com.br
-      # Timeout
-      - REQUEST_TIMEOUT=90
-      - RACK_TIMEOUT_SERVICE_TIMEOUT=180
-      - PUMA_WORKERS_TIMEOUT=180
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${CHATWOOT_DB_NAME}
+      POSTGRES_USERNAME: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: redis://redis_back:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      ACTIVE_STORAGE_SERVICE: amazon
+      S3_BUCKET_NAME: chatwoot-2
+      AWS_ACCESS_KEY_ID: ${CHATWOOT_AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${CHATWOOT_AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: us-west-2
+      STORAGE_REGION: us-west-2
+      ENABLE_ACCOUNT_SIGNUP: "true"
+      MAILER_SENDER_EMAIL: "Azapfy <danielalvesferraz04@gmail.com>"
+      SMTP_DOMAIN: gmail.com
+      SMTP_ADDRESS: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USERNAME: danielalvesferraz04@gmail.com
+      SMTP_PASSWORD: ${CHATWOOT_SMTP_PASSWORD}
+      SMTP_AUTHENTICATION: login
+      SMTP_ENABLE_STARTTLS_AUTO: "true"
+      SMTP_OPENSSL_VERIFY_MODE: none
+      MAILER_INBOUND_EMAIL_DOMAIN: auto2.azapfy.com.br
+      FRONTEND_URL: https://auto2.azapfy.com.br
+      REQUEST_TIMEOUT: 90
+      RACK_TIMEOUT_SERVICE_TIMEOUT: 180
+      PUMA_WORKERS_TIMEOUT: 180
     entrypoint: docker/entrypoints/rails.sh
     command: [ 'bundle', 'exec', 'sidekiq', '-C', 'config/sidekiq.yml' ]
     networks:
@@ -210,58 +191,47 @@ services:
 
   # Evolution API - auto3.azapfy.com.br
   evolution-api:
-    image: evoapicloud/evolution-api:v2.3.4
-    restart: unless-stopped 
+    image: evoapicloud/evolution-api:v2.3.6
+    restart: unless-stopped
     ports:
-      - "8081:8080"  # Porta para acesso direto (teste)
+      - "8081:8080" # Porta para acesso direto (teste)
     environment:
-      - SERVER_URL=https://auto3.azapfy.com.br
-      - DEL_INSTANCE=false
-      # postgres
-      - DATABASE_ENABLED=true
-      - DATABASE_PROVIDER=postgresql
-      - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/evolution_db
-      - DATABASE_SAVE_DATA_INSTANCE=true
-      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
-      - DATABASE_SAVE_MESSAGE_UPDATE=true
-      - DATABASE_SAVE_DATA_CONTACTS=true
-      - DATABASE_SAVE_DATA_CHATS=true
-      - DATABASE_SAVE_DATA_LABELS=true
-      - DATABASE_SAVE_DATA_HISTORIC=true
-      - DATABASE_CONNECTION_CLIENT_NAME=evolution_v2
-      # rabbitmq
-      - RABBITMQ_ENABLED=false
-      - RABBITMQ_URI=${RABBITMQ_URI}
-      # Redis
-      - CACHE_REDIS_ENABLED=true
-      - CACHE_REDIS_URI=redis://:${REDIS_PASSWORD}@redis_back:6379/1
-      - CACHE_REDIS_PREFIX_KEY=evolution_v2
-      - CACHE_REDIS_SAVE_INSTANCES=false
-      - CACHE_LOCAL_ENABLED=false
-      # storage
-      - S3_ENABLED=true
-      - S3_ACCESS_KEY=${EVOLUTION_S3_ACCESS_KEY}
-      - S3_SECRET_KEY=${EVOLUTION_S3_SECRET_KEY}
-      - S3_BUCKET=evolution-api1
-      - S3_PORT=443
-      - S3_ENDPOINT=s3-us-west-2.amazonaws.com
-      - S3_USE_SSL=true
-      - S3_REGION=us-west-2
-
-      # segurança
-      - AUTHENTICATION_API_KEY=${EVOLUTION_AUTHENTICATION_API_KEY}
-      # Qr Code
-      - CONFIG_SESSION_PHONE_VERSION=2.3000.1023204200
-
-      # chatwoot
-      - CHATWOOT_ENABLED=true
-      # Timeouts
-      - HTTP_TIMEOUT=120000
-      - MESSAGE_SEND_TIMEOUT=120000
-      - CHATWOOT_MESSAGE_SEND_TIMEOUT=120000
-      # Cache
-      - CACHE_GROUP_PARTICIPANTS=true
-      - CACHE_GROUP_TTL=3600
+      SERVER_URL: https://auto3.azapfy.com.br
+      DEL_INSTANCE: "false"
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/evolution_db"
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_LABELS: "true"
+      DATABASE_SAVE_DATA_HISTORIC: "true"
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_v2
+      RABBITMQ_ENABLED: "false"
+      RABBITMQ_URI: ${RABBITMQ_URI}
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: "redis://:${REDIS_PASSWORD}@redis_back:6379/1"
+      CACHE_REDIS_PREFIX_KEY: evolution_v2
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+      CACHE_LOCAL_ENABLED: "false"
+      S3_ENABLED: "true"
+      S3_ACCESS_KEY: ${EVOLUTION_S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${EVOLUTION_S3_SECRET_KEY}
+      S3_BUCKET: evolution-api1
+      S3_PORT: 443
+      S3_ENDPOINT: s3-us-west-2.amazonaws.com
+      S3_USE_SSL: "true"
+      S3_REGION: us-west-2
+      AUTHENTICATION_API_KEY: ${EVOLUTION_AUTHENTICATION_API_KEY}
+      CONFIG_SESSION_PHONE_VERSION: 2.3000.1023204200
+      CHATWOOT_ENABLED: "true"
+      HTTP_TIMEOUT: 120000
+      MESSAGE_SEND_TIMEOUT: 120000
+      CHATWOOT_MESSAGE_SEND_TIMEOUT: 120000
+      CACHE_GROUP_PARTICIPANTS: "true"
+      CACHE_GROUP_TTL: 3600
     labels:
       - "traefik.enable=true"
       # HTTP
