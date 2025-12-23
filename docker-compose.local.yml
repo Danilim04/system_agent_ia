@@ -251,6 +251,25 @@ services:
     networks:
       - azap_net
 
+  mcp-server:
+    build: 
+      context: ./servidor-mcp
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    networks:
+      - azap_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mcp-server.rule=Host(`mcp.local`)"
+      - "traefik.http.services.mcp-server.loadbalancer.server.port=3001"
+
 volumes:
   n8n_data:
     driver: local

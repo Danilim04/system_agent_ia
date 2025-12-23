@@ -1,0 +1,116 @@
+{
+  "name": "IA Atendimento WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "id": "webhook-trigger",
+      "name": "Chatwoot Webhook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.labels }}",
+              "operation": "contains",
+              "value2": "AI"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "id": "check-label",
+      "name": "Check AI Label"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {
+          "systemMessage": "Você é um assistente de atendimento da Azapfy. Fale SEMPRE em Português do Brasil. Seja gentil e humano. Não diga que é um robô. Use as ferramentas disponíveis para responder."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "id": "ai-agent",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "url": "http://mcp-server:3001/api/invoice",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "numero_nf",
+              "value": "={{ $fromAI }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        650,
+        500
+      ],
+      "id": "tool-invoice",
+      "name": "Tool: Search Invoice"
+    },
+    {
+       "parameters": {
+        "url": "http://mcp-server:3001/api/ticket",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {}
+      }, 
+      "type": "n8n-nodes-base.httpRequest", 
+      "typeVersion": 1,
+      "position": [850, 500],
+      "id": "tool-ticket",
+      "name": "Tool: Open Ticket"
+    }
+  ],
+  "connections": {
+    "Chatwoot Webhook": {
+      "main": [
+        [
+          {
+            "node": "Check AI Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check AI Label": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}
