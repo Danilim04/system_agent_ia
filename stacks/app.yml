@@ -1,0 +1,417 @@
+# Stack: app
+# Aplicações: n8n, Chatwoot, Evolution API, MinIO
+# Deploy: make deploy-app
+
+services:
+  # =============================================================================
+  # MINIO - Object Storage (S3 Compatible)
+  # =============================================================================
+  minio:
+    image: minio/minio:latest
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.1"
+      labels:
+        - "traefik.enable=true"
+        # MinIO API - HTTPS (exclui paths de outros serviços)
+        - "traefik.http.routers.minio.rule=Host(`db.oivox.com.br`) && !PathPrefix(`/monitoramento`)"
+        - "traefik.http.routers.minio.entrypoints=websecure"
+        - "traefik.http.routers.minio.tls=true"
+        - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.minio.service=minio"
+        - "traefik.http.services.minio.loadbalancer.server.port=9000"
+        # MinIO Console (opcional, porta 9001)
+        - "traefik.http.routers.minio-console.rule=Host(`console.db.oivox.com.br`)"
+        - "traefik.http.routers.minio-console.entrypoints=websecure"
+        - "traefik.http.routers.minio-console.tls=true"
+        - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
+        - "traefik.http.routers.minio-console.service=minio-console"
+        - "traefik.http.services.minio-console.loadbalancer.server.port=9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_SERVER_URL: https://db.oivox.com.br
+      MINIO_BROWSER_REDIRECT_URL: https://console.db.oivox.com.br
+      MINIO_API_CORS_ALLOW_ORIGIN: "https://chatwoot.oivox.com.br,https://evolutionapi.oivox.com.br"
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - oivox_network
+
+  # Inicializa buckets do MinIO automaticamente
+  minio-init:
+    image: minio/mc:latest
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 10s
+        max_attempts: 5
+    entrypoint: >
+      /bin/sh -c "
+      sleep 10;
+      mc alias set myminio http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
+      mc mb --ignore-existing myminio/chatwoot;
+      mc mb --ignore-existing myminio/evolution;
+      mc anonymous set download myminio/chatwoot;
+      mc anonymous set download myminio/evolution;
+      echo 'Buckets created successfully';
+      exit 0;
+      "
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    networks:
+      - oivox_network
+
+  # =============================================================================
+  # N8N - Workflow Automation
+  # =============================================================================
+  n8n:
+    image: n8nio/n8n:latest
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.25"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.n8n.rule=Host(`${N8N_HOST}`)"
+        - "traefik.http.routers.n8n.entrypoints=websecure"
+        - "traefik.http.routers.n8n.tls=true"
+        - "traefik.http.routers.n8n.tls.certresolver=letsencrypt"
+        - "traefik.http.services.n8n.loadbalancer.server.port=5678"
+    environment:
+      NODE_ENV: production
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      # URLs
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://${N8N_HOST}
+      N8N_SECURE_COOKIE: "true"
+      TZ: ${TZ:-America/Sao_Paulo}
+      # Security
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_BASIC_AUTH_ACTIVE: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      # Database
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB_N8N:-n8n_db}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_POSTGRESDB_SCHEMA: public
+      # Queue Mode (Redis)
+      EXECUTIONS_MODE: queue
+      QUEUE_BULL_REDIS_HOST: redis
+      QUEUE_BULL_REDIS_PORT: 6379
+      QUEUE_BULL_REDIS_DB: ${REDIS_DB:-0}
+      QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - oivox_network
+
+  # N8N Worker - Processa execuções em fila
+  n8n-worker:
+    image: n8nio/n8n:latest
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.1"
+    command: worker
+    environment:
+      NODE_ENV: production
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: https
+      WEBHOOK_URL: https://${N8N_HOST}
+      N8N_SECURE_COOKIE: "true"
+      TZ: ${TZ:-America/Sao_Paulo}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${POSTGRES_DB_N8N:-n8n_db}
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_POSTGRESDB_SCHEMA: public
+      EXECUTIONS_MODE: queue
+      QUEUE_BULL_REDIS_HOST: redis
+      QUEUE_BULL_REDIS_PORT: 6379
+      QUEUE_BULL_REDIS_DB: ${REDIS_DB:-0}
+      QUEUE_BULL_REDIS_PASSWORD: ${REDIS_PASSWORD}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - oivox_network
+
+  # =============================================================================
+  # CHATWOOT - Customer Support Platform
+  # =============================================================================
+  chatwoot-web:
+    image: chatwoot/chatwoot:v4.4.0
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 2G
+          cpus: "1.0"
+        reservations:
+          memory: 512M
+          cpus: "0.25"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.chatwoot.rule=Host(`${CHATWOOT_HOST}`)"
+        - "traefik.http.routers.chatwoot.entrypoints=websecure"
+        - "traefik.http.routers.chatwoot.tls=true"
+        - "traefik.http.routers.chatwoot.tls.certresolver=letsencrypt"
+        - "traefik.http.services.chatwoot.loadbalancer.server.port=3000"
+    environment:
+      # Database
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${CHATWOOT_DB_NAME:-chatwoot_db}
+      POSTGRES_USERNAME: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      # Redis
+      REDIS_URL: redis://:${REDIS_PASSWORD_ENCODED}@redis:6379
+      # Rails
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE}
+      FRONTEND_URL: https://${CHATWOOT_HOST}
+      # Storage
+      ACTIVE_STORAGE_SERVICE: local
+      # SMTP
+      MAILER_SENDER_EMAIL: ${SMTP_SENDER_EMAIL:-noreply@oivox.com.br}
+      SMTP_DOMAIN: ${SMTP_DOMAIN:-gmail.com}
+      SMTP_ADDRESS: ${SMTP_ADDRESS:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${CHATWOOT_SMTP_PASSWORD}
+      SMTP_AUTHENTICATION: login
+      SMTP_ENABLE_STARTTLS_AUTO: "true"
+      SMTP_OPENSSL_VERIFY_MODE: none
+      MAILER_INBOUND_EMAIL_DOMAIN: ${CHATWOOT_HOST}
+    entrypoint: docker/entrypoints/rails.sh
+    command: ["bundle", "exec", "rails", "s", "-b", "0.0.0.0", "-p", "3000"]
+    volumes:
+      - chatwoot_storage:/app/storage
+    networks:
+      oivox_network:
+        aliases:
+          - chatwoot-internal
+
+  # Chatwoot Sidekiq Worker
+  chatwoot-worker:
+    image: chatwoot/chatwoot:v4.4.0
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.1"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DATABASE: ${CHATWOOT_DB_NAME:-chatwoot_db}
+      POSTGRES_USERNAME: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: redis://:${REDIS_PASSWORD_ENCODED}@redis:6379
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${CHATWOOT_SECRET_KEY_BASE}
+      FRONTEND_URL: https://${CHATWOOT_HOST}
+      ACTIVE_STORAGE_SERVICE: local
+      ENABLE_ACCOUNT_SIGNUP: "true"
+      MAILER_SENDER_EMAIL: ${SMTP_SENDER_EMAIL:-noreply@oivox.com.br}
+      SMTP_DOMAIN: ${SMTP_DOMAIN:-gmail.com}
+      SMTP_ADDRESS: ${SMTP_ADDRESS:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${CHATWOOT_SMTP_PASSWORD}
+      SMTP_AUTHENTICATION: login
+      SMTP_ENABLE_STARTTLS_AUTO: "true"
+      SMTP_OPENSSL_VERIFY_MODE: none
+      MAILER_INBOUND_EMAIL_DOMAIN: ${CHATWOOT_HOST}
+    entrypoint: docker/entrypoints/rails.sh
+    command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
+    volumes:
+      - chatwoot_storage:/app/storage
+      - /home/administrator/system_agent_ia/config/chatwoot/trigger.rb:/app/lib/webhooks/trigger.rb:ro
+    networks:
+      - oivox_network
+
+  # =============================================================================
+  # EVOLUTION API - WhatsApp Integration
+  # =============================================================================
+  evolution-api:
+    image: evoapicloud/evolution-api:v2.3.6
+    deploy:
+      mode: replicated
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.5"
+        reservations:
+          memory: 256M
+          cpus: "0.1"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.evolution.rule=Host(`${EVOLUTION_HOST}`)"
+        - "traefik.http.routers.evolution.entrypoints=websecure"
+        - "traefik.http.routers.evolution.tls=true"
+        - "traefik.http.routers.evolution.tls.certresolver=letsencrypt"
+        - "traefik.http.services.evolution.loadbalancer.server.port=8080"
+    environment:
+      SERVER_URL: https://${EVOLUTION_HOST}
+      DEL_INSTANCE: "false"
+      # Database
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD_ENCODED}@postgres:5432/${EVOLUTION_DB_NAME:-evolution_db}"
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      DATABASE_SAVE_DATA_LABELS: "true"
+      DATABASE_SAVE_DATA_HISTORIC: "true"
+      DATABASE_CONNECTION_CLIENT_NAME: evolution_v2
+      # Cache (Redis)
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: "redis://:${REDIS_PASSWORD_ENCODED}@redis:6379/1"
+      CACHE_REDIS_PREFIX_KEY: evolution_v2
+      CACHE_REDIS_SAVE_INSTANCES: "false"
+      CACHE_LOCAL_ENABLED: "false"
+      # S3 Storage (MinIO)
+      S3_ENABLED: "true"
+      S3_ACCESS_KEY: ${MINIO_ROOT_USER}
+      S3_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      S3_BUCKET: ${EVOLUTION_BUCKET_NAME:-evolution}
+      S3_PORT: "9000"
+      S3_ENDPOINT: minio
+      S3_USE_SSL: "false"
+      S3_REGION: us-east-1
+      # Authentication
+      AUTHENTICATION_API_KEY: ${EVOLUTION_AUTHENTICATION_API_KEY}
+      # Chatwoot Integration
+      CHATWOOT_ENABLED: "true"
+      CHATWOOT_BASE_URL: http://chatwoot-internal:3000
+      # Timeouts
+      HTTP_TIMEOUT: 120000
+      MESSAGE_SEND_TIMEOUT: 120000
+      CHATWOOT_MESSAGE_SEND_TIMEOUT: 120000
+      # Cache
+      CACHE_GROUP_PARTICIPANTS: "true"
+      CACHE_GROUP_TTL: 3600
+      CONFIG_SESSION_PHONE_VERSION: 2.3000.1023204200
+    volumes:
+      - evolution_data:/evolution/instances
+    networks:
+      oivox_network:
+        aliases:
+          - evolution-internal
+
+# =============================================================================
+# VOLUMES - Dados migrados dos volumes antigos
+# =============================================================================
+volumes:
+  minio_data:
+    name: app_minio_data
+  n8n_data:
+    name: app_n8n_data
+  chatwoot_storage:
+    name: app_chatwoot_storage
+  evolution_data:
+    name: app_evolution_data
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  oivox_network:
+    external: true
