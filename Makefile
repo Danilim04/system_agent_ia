@@ -19,10 +19,11 @@ BLUE   := \033[0;34m
 NC     := \033[0m # No Color
 
 # Variáveis
+-include .env
+export
 STACK_DIR := stacks
 INFRA_STACK := infra
 APP_STACK := app
-STACK_NAME := oivox
 
 # =============================================================================
 # HELP
@@ -93,11 +94,11 @@ deploy: deploy-infra wait-infra deploy-app
 	@echo "$(GREEN)╚══════════════════════════════════════════════════════════════╝$(NC)"
 	@echo ""
 	@echo "$(BLUE)URLs disponíveis:$(NC)"
-	@echo "  • n8n:           https://$${N8N_HOST:-worflow.oivox.com.br}"
-	@echo "  • Chatwoot:      https://$${CHATWOOT_HOST:-chatwoot.oivox.com.br}"
-	@echo "  • Evolution API: https://$${EVOLUTION_HOST:-evolutionapi.oivox.com.br}"
-	@echo "  • MinIO:         https://db.oivox.com.br"
-	@echo "  • Monitoramento: https://db.oivox.com.br/monitoramento"
+	@echo "  • n8n:           https://$${N8N_HOST}"
+	@echo "  • Chatwoot:      https://$${CHATWOOT_HOST}"
+	@echo "  • Evolution API: https://$${EVOLUTION_HOST}"
+	@echo "  • MinIO:         https://$${MINIO_HOST}"
+	@echo "  • Monitoramento: https://$${MINIO_HOST}/monitoramento"
 	@echo ""
 
 # Função helper: docker compose config gera cpus como float e published como string,

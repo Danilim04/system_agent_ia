@@ -33,7 +33,7 @@ services:
       labels:
         - "traefik.enable=true"
         # Dashboard - Protegido por BasicAuth
-        - "traefik.http.routers.traefik-dashboard.rule=Host(`traefik.oivox.com.br`)"
+        - "traefik.http.routers.traefik-dashboard.rule=Host(`${TRAEFIK_HOST}`)"
         - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
         - "traefik.http.routers.traefik-dashboard.tls=true"
         - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
@@ -55,7 +55,7 @@ services:
       # Provider Swarm (Traefik v3 - provider separado do Docker)
       - "--providers.swarm=true"
       - "--providers.swarm.exposedbydefault=false"
-      - "--providers.swarm.network=oivox_network"
+      - "--providers.swarm.network=shared_network"
       - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
       
       # EntryPoints
@@ -86,7 +86,7 @@ services:
       - "--metrics.prometheus=true"
 
       # Let's Encrypt
-      - "--certificatesresolvers.letsencrypt.acme.email=suporte@azapfy.com.br"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@seudominio.com.br}"
       - "--certificatesresolvers.letsencrypt.acme.storage=/etc/certs/acme.json"
       - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
     networks:
@@ -170,7 +170,7 @@ services:
 
   # =============================================================================
   # PORTAINER - Container Management & Monitoring
-  # URL: https://db.oivox.com.br/monitoramento
+  # URL: https://${MINIO_HOST}/monitoramento
   # =============================================================================
   portainer:
     image: portainer/portainer-ce:latest
@@ -193,8 +193,8 @@ services:
           cpus: "0.05"
       labels:
         - "traefik.enable=true"
-        # Portainer via PathPrefix no domínio db.oivox.com.br
-        - "traefik.http.routers.portainer.rule=Host(`db.oivox.com.br`) && PathPrefix(`/monitoramento`)"
+        # Portainer via PathPrefix no domínio do MinIO
+        - "traefik.http.routers.portainer.rule=Host(`${MINIO_HOST}`) && PathPrefix(`/monitoramento`)"
         - "traefik.http.routers.portainer.entrypoints=websecure"
         - "traefik.http.routers.portainer.tls=true"
         - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
@@ -232,4 +232,4 @@ networks:
   network:
     driver: overlay
     attachable: true
-    name: oivox_network
+    name: shared_network

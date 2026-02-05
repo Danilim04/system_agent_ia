@@ -29,14 +29,14 @@ services:
       labels:
         - "traefik.enable=true"
         # MinIO API - HTTPS (exclui paths de outros serviços)
-        - "traefik.http.routers.minio.rule=Host(`db.oivox.com.br`) && !PathPrefix(`/monitoramento`)"
+        - "traefik.http.routers.minio.rule=Host(`${MINIO_HOST}`) && !PathPrefix(`/monitoramento`)"
         - "traefik.http.routers.minio.entrypoints=websecure"
         - "traefik.http.routers.minio.tls=true"
         - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
         - "traefik.http.routers.minio.service=minio"
         - "traefik.http.services.minio.loadbalancer.server.port=9000"
         # MinIO Console (opcional, porta 9001)
-        - "traefik.http.routers.minio-console.rule=Host(`console.db.oivox.com.br`)"
+        - "traefik.http.routers.minio-console.rule=Host(`${MINIO_CONSOLE_HOST}`)"
         - "traefik.http.routers.minio-console.entrypoints=websecure"
         - "traefik.http.routers.minio-console.tls=true"
         - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
@@ -45,9 +45,9 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_SERVER_URL: https://db.oivox.com.br
-      MINIO_BROWSER_REDIRECT_URL: https://console.db.oivox.com.br
-      MINIO_API_CORS_ALLOW_ORIGIN: "https://chatwoot.oivox.com.br,https://evolutionapi.oivox.com.br"
+      MINIO_SERVER_URL: https://${MINIO_HOST}
+      MINIO_BROWSER_REDIRECT_URL: https://${MINIO_CONSOLE_HOST}
+      MINIO_API_CORS_ALLOW_ORIGIN: "https://${CHATWOOT_HOST},https://${EVOLUTION_HOST}"
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
@@ -58,7 +58,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - oivox_network
+      - shared_network
 
   # Inicializa buckets do MinIO automaticamente
   minio-init:
@@ -85,7 +85,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     networks:
-      - oivox_network
+      - shared_network
 
   # =============================================================================
   # N8N - Workflow Automation
@@ -148,7 +148,7 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
-      - oivox_network
+      - shared_network
 
   # N8N Worker - Processa execuções em fila
   n8n-worker:
@@ -198,7 +198,7 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
-      - oivox_network
+      - shared_network
 
   # =============================================================================
   # CHATWOOT - Customer Support Platform
@@ -246,7 +246,7 @@ services:
       # Storage
       ACTIVE_STORAGE_SERVICE: local
       # SMTP
-      MAILER_SENDER_EMAIL: ${SMTP_SENDER_EMAIL:-noreply@oivox.com.br}
+      MAILER_SENDER_EMAIL: ${SMTP_SENDER_EMAIL:-noreply@seudominio.com.br}
       SMTP_DOMAIN: ${SMTP_DOMAIN:-gmail.com}
       SMTP_ADDRESS: ${SMTP_ADDRESS:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -261,7 +261,7 @@ services:
     volumes:
       - chatwoot_storage:/app/storage
     networks:
-      oivox_network:
+      shared_network:
         aliases:
           - chatwoot-internal
 
@@ -298,7 +298,7 @@ services:
       FRONTEND_URL: https://${CHATWOOT_HOST}
       ACTIVE_STORAGE_SERVICE: local
       ENABLE_ACCOUNT_SIGNUP: "true"
-      MAILER_SENDER_EMAIL: ${SMTP_SENDER_EMAIL:-noreply@oivox.com.br}
+      MAILER_SENDER_EMAIL: ${SMTP_SENDER_EMAIL:-noreply@seudominio.com.br}
       SMTP_DOMAIN: ${SMTP_DOMAIN:-gmail.com}
       SMTP_ADDRESS: ${SMTP_ADDRESS:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
@@ -314,7 +314,7 @@ services:
       - chatwoot_storage:/app/storage
       - /home/administrator/system_agent_ia/config/chatwoot/trigger.rb:/app/lib/webhooks/trigger.rb:ro
     networks:
-      - oivox_network
+      - shared_network
 
   # =============================================================================
   # EVOLUTION API - WhatsApp Integration
@@ -392,7 +392,7 @@ services:
     volumes:
       - evolution_data:/evolution/instances
     networks:
-      oivox_network:
+      shared_network:
         aliases:
           - evolution-internal
 
@@ -413,5 +413,5 @@ volumes:
 # NETWORKS
 # =============================================================================
 networks:
-  oivox_network:
+  shared_network:
     external: true

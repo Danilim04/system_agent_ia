@@ -1,8 +1,15 @@
+# Variáveis de ambiente (contém senhas)
 .env
-.env_example
-.logs
-.certs
-/logs
-/certs
-./logs
+
+# Diretório de dados persistentes
+data/
+
+# Dados do MinIO (arquivos de usuários)
+minio-data/
+
+# Logs e certificados (se existirem localmente)
+*.log
+certs/
+logs/
+
 ./certs

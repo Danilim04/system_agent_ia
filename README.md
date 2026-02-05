@@ -19,13 +19,13 @@ make migrate
 
 ## 📋 URLs dos Serviços
 
-| Serviço | URL |
-|---------|-----|
-| Chatwoot | `https://chatwoot.oivox.com.br` |
-| n8n | `https://worflow.oivox.com.br` |
-| Evolution API | `https://evolutionapi.oivox.com.br` |
-| MinIO | `https://db.oivox.com.br` |
-| Monitoramento | `https://db.oivox.com.br/monitoramento` |
+| Serviço | Variável no `.env` | Exemplo |
+|---------|-------------------|---------|
+| Chatwoot | `CHATWOOT_HOST` | `https://chatwoot.seudominio.com.br` |
+| n8n | `N8N_HOST` | `https://n8n.seudominio.com.br` |
+| Evolution API | `EVOLUTION_HOST` | `https://evolution.seudominio.com.br` |
+| MinIO | `MINIO_HOST` | `https://minio.seudominio.com.br` |
+| Monitoramento | `MINIO_HOST` + `/monitoramento` | `https://minio.seudominio.com.br/monitoramento` |
 
 ## 📖 Comandos Úteis
 

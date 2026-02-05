@@ -4,13 +4,13 @@ Sistema integrado de atendimento ao cliente com automação de workflows e integ
 
 ## 📋 Visão Geral
 
-| Serviço | Descrição | URL |
-|---------|-----------|-----|
-| **Chatwoot** | Plataforma de atendimento ao cliente | `https://chatwoot.oivox.com.br` |
-| **n8n** | Automação de workflows | `https://worflow.oivox.com.br` |
-| **Evolution API** | Integração com WhatsApp | `https://evolutionapi.oivox.com.br` |
-| **MinIO** | Armazenamento de arquivos (S3) | `https://db.oivox.com.br` |
-| **Portainer** | Monitoramento de containers | `https://db.oivox.com.br/monitoramento` |
+| Serviço | Descrição | Variável `.env` |
+|---------|-----------|----------------|
+| **Chatwoot** | Plataforma de atendimento ao cliente | `CHATWOOT_HOST` |
+| **n8n** | Automação de workflows | `N8N_HOST` |
+| **Evolution API** | Integração com WhatsApp | `EVOLUTION_HOST` |
+| **MinIO** | Armazenamento de arquivos (S3) | `MINIO_HOST` |
+| **Portainer** | Monitoramento de containers | `MINIO_HOST` + `/monitoramento` |
 
 ## 🏗️ Arquitetura
 
@@ -164,7 +164,7 @@ make clean             # Remove volumes órfãos
 
 ## 📊 Monitoramento
 
-Acesse o Portainer em `https://db.oivox.com.br/monitoramento`:
+Acesse o Portainer em `https://<MINIO_HOST>/monitoramento`:
 
 1. No primeiro acesso, crie um usuário admin
 2. Visualize containers, logs, recursos, volumes
@@ -205,4 +205,4 @@ make migrate  # Roda migrações
 
 ## 📝 Licença
 
-Projeto interno - Azapfy
+Projeto interno
