@@ -258,6 +258,8 @@ services:
       MAILER_INBOUND_EMAIL_DOMAIN: ${CHATWOOT_HOST}
     entrypoint: docker/entrypoints/rails.sh
     command: ["bundle", "exec", "rails", "s", "-b", "0.0.0.0", "-p", "3000"]
+    ports:
+      - "3000:3000"
     volumes:
       - chatwoot_storage:/app/storage
     networks:
