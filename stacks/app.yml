@@ -314,7 +314,7 @@ services:
     command: ["bundle", "exec", "sidekiq", "-C", "config/sidekiq.yml"]
     volumes:
       - chatwoot_storage:/app/storage
-      - /home/administrator/system_agent_ia/config/chatwoot/trigger.rb:/app/lib/webhooks/trigger.rb:ro
+      - ${PROJECT_DIR}/config/chatwoot/trigger.rb:/app/lib/webhooks/trigger.rb:ro
     networks:
       - shared_network
 

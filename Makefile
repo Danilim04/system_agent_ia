@@ -21,6 +21,7 @@ NC     := \033[0m # No Color
 # Variáveis
 -include .env
 export
+PROJECT_DIR := $(shell pwd)
 STACK_DIR := stacks
 INFRA_STACK := infra
 APP_STACK := app

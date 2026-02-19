@@ -50,7 +50,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik_certs:/etc/certs
       - traefik_logs:/var/log/traefik
-      - /home/administrator/system_agent_ia/config/traefik/dynamic:/dynamic:ro
+      - ${PROJECT_DIR}/config/traefik/dynamic:/dynamic:ro
     command:
       # Provider Swarm (Traefik v3 - provider separado do Docker)
       - "--providers.swarm=true"
@@ -124,7 +124,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - /home/administrator/system_agent_ia/config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ${PROJECT_DIR}/config/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-postgres}"]
       interval: 10s
