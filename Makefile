@@ -194,13 +194,36 @@ logs-evolution:
 # MANUTENÇÃO
 # =============================================================================
 migrate:
-	@echo "$(BLUE)▶ Rodando migrações do Chatwoot...$(NC)"
-	@CONTAINER=$$(docker ps -q -f name=$(APP_STACK)_chatwoot-web); \
-	if [ -n "$$CONTAINER" ]; then \
-		docker exec $$CONTAINER bundle exec rails db:chatwoot_prepare; \
+	@echo "$(BLUE)▶ Subindo container temporário para rodar migrações do Chatwoot...$(NC)"
+	@docker service rm chatwoot-migrate 2>/dev/null || true
+	@docker service create \
+		--name chatwoot-migrate \
+		--network app_net \
+		--restart-condition none \
+		--env POSTGRES_HOST=postgres \
+		--env POSTGRES_PORT=5432 \
+		--env POSTGRES_DATABASE=$${CHATWOOT_DB_NAME:-chatwoot_db} \
+		--env POSTGRES_USERNAME=$${POSTGRES_USER} \
+		--env POSTGRES_PASSWORD=$${POSTGRES_PASSWORD} \
+		--env REDIS_URL=redis://:$${REDIS_PASSWORD_ENCODED}@redis:6379 \
+		--env RAILS_ENV=production \
+		--env SECRET_KEY_BASE=$${CHATWOOT_SECRET_KEY_BASE} \
+		--env FRONTEND_URL=https://$${CHATWOOT_HOST} \
+		chatwoot/chatwoot:v4.4.0 \
+		bundle exec rails db:chatwoot_prepare
+	@echo "$(YELLOW)▶ Aguardando migração concluir...$(NC)"
+	@while [ "$$(docker service ps chatwoot-migrate --format '{{.CurrentState}}' | head -1 | awk '{print $$1}')" != "Complete" ] && \
+	       [ "$$(docker service ps chatwoot-migrate --format '{{.CurrentState}}' | head -1 | awk '{print $$1}')" != "Failed" ]; do \
+		sleep 5; \
+	done
+	@STATE=$$(docker service ps chatwoot-migrate --format '{{.CurrentState}}' | head -1 | awk '{print $$1}'); \
+	docker service logs chatwoot-migrate 2>&1 | tail -30; \
+	docker service rm chatwoot-migrate > /dev/null 2>&1; \
+	if [ "$$STATE" = "Complete" ]; then \
 		echo "$(GREEN)✔ Migrações concluídas$(NC)"; \
 	else \
-		echo "$(RED)✘ Container do Chatwoot não encontrado$(NC)"; \
+		echo "$(RED)✘ Falha ao rodar migrações$(NC)"; \
+		exit 1; \
 	fi
 
 restart: down

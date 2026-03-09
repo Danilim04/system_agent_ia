@@ -58,7 +58,7 @@ services:
       retries: 3
       start_period: 30s
     networks:
-      - shared_network
+      - app_net
 
   # Inicializa buckets do MinIO automaticamente
   minio-init:
@@ -85,7 +85,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     networks:
-      - shared_network
+      - app_net
 
   # =============================================================================
   # N8N - Workflow Automation
@@ -148,7 +148,7 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
-      - shared_network
+      - app_net
 
   # N8N Worker - Processa execuções em fila
   n8n-worker:
@@ -198,7 +198,7 @@ services:
     volumes:
       - n8n_data:/home/node/.n8n
     networks:
-      - shared_network
+      - app_net
 
   # =============================================================================
   # CHATWOOT - Customer Support Platform
@@ -263,7 +263,7 @@ services:
     volumes:
       - chatwoot_storage:/app/storage
     networks:
-      shared_network:
+      app_net:
         aliases:
           - chatwoot-internal
 
@@ -316,7 +316,7 @@ services:
       - chatwoot_storage:/app/storage
       - ${PROJECT_DIR}/config/chatwoot/trigger.rb:/app/lib/webhooks/trigger.rb:ro
     networks:
-      - shared_network
+      - app_net
 
   # =============================================================================
   # EVOLUTION API - WhatsApp Integration
@@ -391,10 +391,12 @@ services:
       CACHE_GROUP_PARTICIPANTS: "true"
       CACHE_GROUP_TTL: 3600
       CONFIG_SESSION_PHONE_VERSION: 2.3000.1023204200
+    ports:
+      - "4000:8080"
     volumes:
       - evolution_data:/evolution/instances
     networks:
-      shared_network:
+      app_net:
         aliases:
           - evolution-internal
 
@@ -415,5 +417,5 @@ volumes:
 # NETWORKS
 # =============================================================================
 networks:
-  shared_network:
+  app_net:
     external: true

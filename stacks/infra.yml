@@ -6,91 +6,91 @@ services:
   # =============================================================================
   # TRAEFIK - Reverse Proxy & Load Balancer
   # =============================================================================
-  traefik:
-    image: traefik:v3.6.1
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-      update_config:
-        parallelism: 1
-        delay: 10s
-        failure_action: rollback
-        order: start-first
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-      resources:
-        limits:
-          memory: 512M
-          cpus: "0.5"
-        reservations:
-          memory: 128M
-          cpus: "0.1"
-      labels:
-        - "traefik.enable=true"
-        # Dashboard - Protegido por BasicAuth
-        - "traefik.http.routers.traefik-dashboard.rule=Host(`${TRAEFIK_HOST}`)"
-        - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
-        - "traefik.http.routers.traefik-dashboard.tls=true"
-        - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
-        - "traefik.http.routers.traefik-dashboard.service=api@internal"
-        - "traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080"
-    ports:
-      - target: 80
-        published: 80
-        mode: host
-      - target: 443
-        published: 443
-        mode: host
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik_certs:/etc/certs
-      - traefik_logs:/var/log/traefik
-      - ${PROJECT_DIR}/config/traefik/dynamic:/dynamic:ro
-    command:
-      # Provider Swarm (Traefik v3 - provider separado do Docker)
-      - "--providers.swarm=true"
-      - "--providers.swarm.exposedbydefault=false"
-      - "--providers.swarm.network=shared_network"
-      - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
+  # traefik:
+  #   image: traefik:v3.6.1
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       constraints:
+  #         - node.role == manager
+  #     update_config:
+  #       parallelism: 1
+  #       delay: 10s
+  #       failure_action: rollback
+  #       order: start-first
+  #     restart_policy:
+  #       condition: on-failure
+  #       delay: 5s
+  #       max_attempts: 3
+  #     resources:
+  #       limits:
+  #         memory: 512M
+  #         cpus: "0.5"
+  #       reservations:
+  #         memory: 128M
+  #         cpus: "0.1"
+  #     labels:
+  #       - "traefik.enable=true"
+  #       # Dashboard - Protegido por BasicAuth
+  #       - "traefik.http.routers.traefik-dashboard.rule=Host(`${TRAEFIK_HOST}`)"
+  #       - "traefik.http.routers.traefik-dashboard.entrypoints=websecure"
+  #       - "traefik.http.routers.traefik-dashboard.tls=true"
+  #       - "traefik.http.routers.traefik-dashboard.tls.certresolver=letsencrypt"
+  #       - "traefik.http.routers.traefik-dashboard.service=api@internal"
+  #       - "traefik.http.services.traefik-dashboard.loadbalancer.server.port=8080"
+  #   ports:
+  #     - target: 80
+  #       published: 80
+  #       mode: host
+  #     - target: 443
+  #       published: 443
+  #       mode: host
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - traefik_certs:/etc/certs
+  #     - traefik_logs:/var/log/traefik
+  #     - ${PROJECT_DIR}/config/traefik/dynamic:/dynamic:ro
+  #   command:
+  #     # Provider Swarm (Traefik v3 - provider separado do Docker)
+  #     - "--providers.swarm=true"
+  #     - "--providers.swarm.exposedbydefault=false"
+  #     - "--providers.swarm.network=shared_network"
+  #     - "--providers.swarm.endpoint=unix:///var/run/docker.sock"
       
-      # EntryPoints
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--entrypoints.websecure.http.tls=true"
+  #     # EntryPoints
+  #     - "--entrypoints.web.address=:80"
+  #     - "--entrypoints.websecure.address=:443"
+  #     - "--entrypoints.websecure.http.tls=true"
       
-      # HTTP -> HTTPS Redirect Global
-      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
-      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+  #     # HTTP -> HTTPS Redirect Global
+  #     - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+  #     - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
 
-      # Dynamic Config (TLS)
-      - "--providers.file.directory=/dynamic"
-      - "--providers.file.watch=true"
+  #     # Dynamic Config (TLS)
+  #     - "--providers.file.directory=/dynamic"
+  #     - "--providers.file.watch=true"
 
-      # API & Dashboard
-      - "--api.dashboard=true"
-      - "--api.insecure=false"
+  #     # API & Dashboard
+  #     - "--api.dashboard=true"
+  #     - "--api.insecure=false"
 
-      # Logs
-      - "--log.level=INFO"
-      - "--log.format=json"
-      - "--accesslog=true"
-      - "--accesslog.format=json"
-      - "--accesslog.filepath=/var/log/traefik/access.log"
+  #     # Logs
+  #     - "--log.level=INFO"
+  #     - "--log.format=json"
+  #     - "--accesslog=true"
+  #     - "--accesslog.format=json"
+  #     - "--accesslog.filepath=/var/log/traefik/access.log"
 
-      # Metrics
-      - "--metrics.prometheus=true"
+  #     # Metrics
+  #     - "--metrics.prometheus=true"
 
-      # Let's Encrypt
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@seudominio.com.br}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/etc/certs/acme.json"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-    networks:
-      - network
+  #     # Let's Encrypt
+  #     - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@seudominio.com.br}"
+  #     - "--certificatesresolvers.letsencrypt.acme.storage=/etc/certs/acme.json"
+  #     - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+  #   networks:
+  #     - network
 
   # =============================================================================
   # POSTGRESQL - Database (com pgvector para embeddings)
@@ -132,7 +132,7 @@ services:
       retries: 5
       start_period: 30s
     networks:
-      - network
+      - app_net
 
   # =============================================================================
   # REDIS - Cache & Message Queue
@@ -166,49 +166,49 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - network
+      - app_net
 
   # =============================================================================
   # PORTAINER - Container Management & Monitoring
   # URL: https://${MINIO_HOST}/monitoramento
   # =============================================================================
-  portainer:
-    image: portainer/portainer-ce:latest
-    deploy:
-      mode: replicated
-      replicas: 1
-      placement:
-        constraints:
-          - node.role == manager
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-      resources:
-        limits:
-          memory: 256M
-          cpus: "0.25"
-        reservations:
-          memory: 64M
-          cpus: "0.05"
-      labels:
-        - "traefik.enable=true"
-        # Portainer via PathPrefix no domínio do MinIO
-        - "traefik.http.routers.portainer.rule=Host(`${MINIO_HOST}`) && PathPrefix(`/monitoramento`)"
-        - "traefik.http.routers.portainer.entrypoints=websecure"
-        - "traefik.http.routers.portainer.tls=true"
-        - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
-        - "traefik.http.routers.portainer.service=portainer"
-        # Middleware para remover o prefixo /monitoramento
-        - "traefik.http.routers.portainer.middlewares=portainer-stripprefix"
-        - "traefik.http.middlewares.portainer-stripprefix.stripprefix.prefixes=/monitoramento"
-        - "traefik.http.services.portainer.loadbalancer.server.port=9000"
-    command: -H unix:///var/run/docker.sock
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - portainer_data:/data
-    networks:
-      - network
+  # portainer:
+  #   image: portainer/portainer-ce:latest
+  #   deploy:
+  #     mode: replicated
+  #     replicas: 1
+  #     placement:
+  #       constraints:
+  #         - node.role == manager
+  #     restart_policy:
+  #       condition: on-failure
+  #       delay: 5s
+  #       max_attempts: 3
+  #     resources:
+  #       limits:
+  #         memory: 256M
+  #         cpus: "0.25"
+  #       reservations:
+  #         memory: 64M
+  #         cpus: "0.05"
+  #     labels:
+  #       - "traefik.enable=true"
+  #       # Portainer via PathPrefix no domínio do MinIO
+  #       - "traefik.http.routers.portainer.rule=Host(`${MINIO_HOST}`) && PathPrefix(`/monitoramento`)"
+  #       - "traefik.http.routers.portainer.entrypoints=websecure"
+  #       - "traefik.http.routers.portainer.tls=true"
+  #       - "traefik.http.routers.portainer.tls.certresolver=letsencrypt"
+  #       - "traefik.http.routers.portainer.service=portainer"
+  #       # Middleware para remover o prefixo /monitoramento
+  #       - "traefik.http.routers.portainer.middlewares=portainer-stripprefix"
+  #       - "traefik.http.middlewares.portainer-stripprefix.stripprefix.prefixes=/monitoramento"
+  #       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+  #   command: -H unix:///var/run/docker.sock
+  #   volumes:
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+  #     - portainer_data:/data
+  #   networks:
+  #     - app_net
 
 # =============================================================================
 # VOLUMES
@@ -229,7 +229,5 @@ volumes:
 # NETWORKS
 # =============================================================================
 networks:
-  network:
-    driver: overlay
-    attachable: true
-    name: shared_network
+  app_net:
+    external: true
